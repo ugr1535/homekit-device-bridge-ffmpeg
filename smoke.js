@@ -7,6 +7,7 @@ const { execFile } = require('node:child_process');
 const { promisify } = require('node:util');
 const { createSocket } = require('node:dgram');
 const { createServer } = require('node:net');
+const { createServer: createTlsServer } = require('node:tls');
 const { randomBytes, createHash } = require('node:crypto');
 const execute = promisify(execFile);
 
@@ -61,10 +62,22 @@ async function smoke(binary, directory) {
             '-srtp_out_params', randomBytes(30).toString('base64'), `srtp://127.0.0.1:${port}?rtcpport=${port}&pkt_size=1316`]);
         assert.ok(srtpPackets > 0);
     } finally { socket.close(); }
+    const key = path.join(directory, 'tls-key.pem');
+    const cert = path.join(directory, 'tls-cert.pem');
+    await execute('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', key, '-out', cert,
+        '-days', '1', '-subj', '/CN=localhost'], { timeout: 10000 });
+    const tls = createTlsServer({ key: await fs.readFile(key), cert: await fs.readFile(cert) });
+    tls.on('tlsClientError', () => {});
+    await new Promise(resolve => tls.listen(0, '127.0.0.1', resolve));
+    try {
+        await assert.rejects(run(['-loglevel', 'error', '-rtsp_transport', 'tcp', '-timeout', '2000000', '-tls_verify', '1',
+            '-i', `rtsps://127.0.0.1:${tls.address().port}/test`, '-an', '-c:v', 'copy', '-f', 'null', '-']),
+        error => /certificate verify failed/i.test(String(error.stderr)));
+    } finally { await new Promise(resolve => tls.close(resolve)); }
     const data = await fs.readFile(binary);
     const report = { schemaVersion: 1, platform: process.platform, arch: process.arch,
         binarySha256: createHash('sha256').update(data).digest('hex'), binaryBytes: data.length,
-        encodedProfiles, jpeg: true, fragmentedMp4Tcp: true, srtpPackets, status: 'passed',
+        encodedProfiles, jpeg: true, fragmentedMp4Tcp: true, srtpPackets, tlsRejectsUntrusted: true, status: 'passed',
         homeyHardwareTested: false, appleHomePlaybackTested: false };
     await fs.writeFile(path.join(path.dirname(binary), 'smoke-result.json'), JSON.stringify(report, null, 2) + '\n');
     console.log(JSON.stringify(report, null, 2));

@@ -58,7 +58,7 @@ test -n "$NM" || NM=nm
     --enable-protocol=file,pipe,tcp,udp,rtp,srtp,crypto,tls \
     --enable-demuxer=rtsp,rtp,sdp,h264,mov --enable-indev=lavfi \
     --enable-muxer=rtp,h264,mp4,image2,image2pipe,null \
-    --enable-decoder=h264,mjpeg --enable-encoder=libx264,mjpeg \
+    --enable-decoder=h264,mjpeg,wrapped_avframe --enable-encoder=libx264,mjpeg,wrapped_avframe \
     --enable-parser=h264 --enable-bsf=h264_mp4toannexb,dump_extra,extract_extradata \
     --enable-filter=color,scale,pad,setsar,fps,format,null,split
 make -j"$JOBS" ffmpeg

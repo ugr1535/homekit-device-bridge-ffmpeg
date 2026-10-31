@@ -73,10 +73,17 @@ async function packageRelease(build, archives, output) {
     for (const name of ['ffmpeg', archiveName, 'smoke-result.json', 'THIRD_PARTY_NOTICES.md']) {
         manifest.files[name] = { sha256: await digest(path.join(output, name)), bytes: (await fs.stat(path.join(output, name))).size };
     }
+    for (const name of Object.keys(noticeFiles)) {
+        const file = `licenses/${name}`;
+        manifest.files[file] = { sha256: await digest(path.join(output, file)), bytes: (await fs.stat(path.join(output, file))).size };
+    }
     await fs.writeFile(path.join(output, 'build-manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
     const sums = [];
     for (const name of [...Object.keys(manifest.files), 'build-manifest.json']) sums.push(`${await digest(path.join(output, name))}  ${name}`);
     await fs.writeFile(path.join(output, 'SHA256SUMS'), sums.join('\n') + '\n');
+    const binaryArchive = 'camera-ffmpeg-9.0.2-hdb1-linux-arm64.tar.gz';
+    execFileSync('tar', ['-czf', path.join(output, binaryArchive), '-C', output,
+        'ffmpeg', 'licenses', 'THIRD_PARTY_NOTICES.md', 'build-manifest.json', 'smoke-result.json', 'SHA256SUMS'], { timeout: 120000 });
     console.log(JSON.stringify({ output, binaryBytes: manifest.files.ffmpeg.bytes, sourceBytes: manifest.files[archiveName].bytes }));
     return manifest;
 }
