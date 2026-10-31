@@ -39,6 +39,25 @@ async function smoke(binary, directory) {
     const fixture = path.join(directory, 'fixture.mp4');
     await run(['-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=black:s=1280x720:r=24', '-t', '3', '-an',
         '-c:v', 'libx264', '-preset', 'ultrafast', '-threads', '1', '-g', '24', '-sc_threshold', '0', '-y', fixture]);
+    // Three locally generated silent AAC-LC frames; no third-party recording.
+    // Repeat the final independent ADTS frame, without adding an audio encoder.
+    const silent = Buffer.from('//FMQAO//N4EAExhdmM1OC4xMzQuMTAwAAIwQA7/8UxAAX/8ARggB//xTEABf/wBGCAH', 'base64');
+    let last;
+    for (let at = 0; at < silent.length;) {
+        const size = ((silent[at + 3] & 3) << 11) | (silent[at + 4] << 3) | (silent[at + 5] >> 5);
+        assert.ok(size >= 7 && at + size <= silent.length);
+        last = silent.subarray(at, at + size);
+        at += size;
+    }
+    const aac = path.join(directory, 'silence.aac');
+    await fs.writeFile(aac, Buffer.concat(Array(200).fill(last)));
+    const audioFixture = path.join(directory, 'audio-copy.mp4');
+    await run(['-loglevel', 'error', '-i', fixture, '-i', aac, '-map', '0:v:0', '-map', '1:a:0', '-t', '3',
+        '-c:v', 'copy', '-c:a', 'copy', '-bsf:a', 'aac_adtstoasc', '-movflags',
+        'frag_keyframe+empty_moov+default_base_moof+skip_trailer', '-y', audioFixture]);
+    const audioMp4 = await fs.readFile(audioFixture);
+    assert.ok(audioMp4.includes(Buffer.from('mp4a')) && audioMp4.includes(Buffer.from('esds')));
+    assert.equal(audioMp4.toString('latin1').split('trak').length - 1, 2);
     const jpeg = await run(['-loglevel', 'error', '-i', fixture, '-frames:v', '1', '-vf', 'scale=640:360',
         '-threads', '1', '-c:v', 'mjpeg', '-f', 'image2pipe', 'pipe:1']);
     assert.equal(jpeg.readUInt16BE(0), 0xffd8);
@@ -88,7 +107,7 @@ async function smoke(binary, directory) {
     const report = { schemaVersion: 1, platform: process.platform, arch: process.arch,
         binarySha256: createHash('sha256').update(data).digest('hex'), binaryBytes: data.length,
         encodedProfiles, jpeg: true, fragmentedMp4Tcp: true, srtpPackets, tlsRejectsUntrusted: true, status: 'passed',
-        staticPie: true, nonExecutableStack, relro,
+        staticPie: true, nonExecutableStack, relro, aacCopy: true,
         homeyHardwareTested: false, appleHomePlaybackTested: false };
     await fs.writeFile(path.join(path.dirname(binary), 'smoke-result.json'), JSON.stringify(report, null, 2) + '\n');
     console.log(JSON.stringify(report, null, 2));

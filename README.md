@@ -51,7 +51,7 @@ over loopback TCP and SRTP packet output. They do not certify Apple Home playbac
 Homey hardware resource use, codec patent clearance or App Store acceptance.
 
 Features are intentionally limited to H264 video, JPEG snapshots, MP4 recording,
-RTSP input, SRTP output and TLS. Audio, ffprobe, ffplay, FDK-AAC, OpenCL and unrelated
+RTSP input, SRTP output, copy-only AAC-LC audio and TLS. Audio encoders, ffprobe, ffplay, FDK-AAC, OpenCL and unrelated
 external codec libraries are not enabled. libx264 remains included: this is not
 an LGPL-only build. Inputs are not patched; source hashes and build options are
 recorded. Cross-platform symbol stripping is disabled; native Linux ARM64 builds

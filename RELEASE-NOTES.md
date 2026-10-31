@@ -10,7 +10,7 @@ the actual compiler runtime sources, build scripts and dependency license texts.
 The compiler program itself is not redistributed; the recipe pins its upstream
 download and checksum.
 
-Linux ARM64 tests passed for three H264 profiles, JPEG snapshots, fragmented MP4
+Linux ARM64 tests passed for three H264 profiles, JPEG snapshots, copy-only AAC audio in fragmented MP4,
 over TCP, SRTP packet output and rejection of an untrusted TLS certificate.
 The tests ran against the exact executable identified in smoke-result.json.
 
