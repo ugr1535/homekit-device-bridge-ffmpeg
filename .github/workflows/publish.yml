@@ -11,8 +11,8 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ugr1535/homekit-device-bridge-ffmpeg
-      TEST_RUN: '41193477466'
-      SOURCE_COMMIT: 2c4a5655b2d8cc866a29fdd8e1bc71f9d261827c
+      TEST_RUN: '41194981437'
+      SOURCE_COMMIT: 2cb1cf24b9af1b7368bba25ce3290224715b75aa
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -21,16 +21,19 @@ jobs:
         run: |
           test "$(gh run view "$TEST_RUN" --json conclusion --jq .conclusion)" = success
           test "$(gh run view "$TEST_RUN" --json headSha --jq .headSha)" = "$SOURCE_COMMIT"
-          gh run download "$TEST_RUN" --name camera-ffmpeg-arm64 --dir release
-          cd release
-          sha256sum --strict -c SHA256SUMS
+          for arch in arm64 x64; do
+            gh run download "$TEST_RUN" --name "camera-ffmpeg-$arch" --dir "release/$arch"
+            (cd "release/$arch" && sha256sum --strict -c SHA256SUMS)
+            cp "release/$arch/build-manifest.json" "release/build-manifest-$arch.json"
+            cp "release/$arch/smoke-result.json" "release/smoke-result-$arch.json"
+            cp "release/$arch/SHA256SUMS" "release/SHA256SUMS-$arch.txt"
+          done
       - name: Publish matching sources and media component
         run: |
-          test "$(gh api "repos/$GH_REPO/git/ref/tags/camera-ffmpeg-9.0.2-hdb3" --jq .object.sha)" = "$SOURCE_COMMIT"
-          gh release create camera-ffmpeg-9.0.2-hdb3 --verify-tag --prerelease \
-            --title 'Camera FFmpeg 9.0.2-hdb3: copy-only AAC audio and matching sources' \
+          test "$(gh api "repos/$GH_REPO/git/ref/tags/camera-ffmpeg-9.0.2-hdb4" --jq .object.sha)" = "$SOURCE_COMMIT"
+          gh release create camera-ffmpeg-9.0.2-hdb4 --verify-tag --prerelease \
+            --title 'Camera FFmpeg 9.0.2-hdb4: native ARM64 and x64 with matching sources' \
             --notes-file RELEASE-NOTES.md \
-            release/camera-ffmpeg-9.0.2-hdb3-corresponding-source.tar.gz \
-            release/camera-ffmpeg-9.0.2-hdb3-linux-arm64.tar.gz \
-            release/build-manifest.json release/smoke-result.json release/SHA256SUMS \
-            release/THIRD_PARTY_NOTICES.md release/licenses/COPYING.GPLv3
+            release/*/*-corresponding-source-*.tar.gz release/*/*-linux-*.tar.gz \
+            release/build-manifest-*.json release/smoke-result-*.json release/SHA256SUMS-*.txt \
+            release/arm64/THIRD_PARTY_NOTICES.md release/arm64/licenses/COPYING.GPLv3
