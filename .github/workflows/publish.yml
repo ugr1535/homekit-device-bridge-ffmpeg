@@ -1,0 +1,35 @@
+name: Publish Tested Camera Media Sources
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ugr1535/homekit-device-bridge-ffmpeg
+      TEST_RUN: '41190233868'
+      SOURCE_COMMIT: 2be5726f35a53f922c2a09c2f96ff1e7e456b034
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Verify successful source build
+        run: |
+          test "$(gh run view "$TEST_RUN" --json conclusion --jq .conclusion)" = success
+          test "$(gh run view "$TEST_RUN" --json headSha --jq .headSha)" = "$SOURCE_COMMIT"
+          gh run download "$TEST_RUN" --name camera-ffmpeg-arm64 --dir release
+          cd release
+          sha256sum --strict -c SHA256SUMS
+      - name: Publish matching sources and media component
+        run: |
+          gh release create camera-ffmpeg-9.0.2-hdb1 --target "$SOURCE_COMMIT" --prerelease \
+            --title 'Camera FFmpeg 9.0.2-hdb1: sources and ARM64 media component' \
+            --notes-file RELEASE-NOTES.md \
+            release/camera-ffmpeg-9.0.2-hdb1-corresponding-source.tar.gz \
+            release/camera-ffmpeg-9.0.2-hdb1-linux-arm64.tar.gz \
+            release/build-manifest.json release/smoke-result.json release/SHA256SUMS \
+            release/THIRD_PARTY_NOTICES.md release/licenses/COPYING.GPLv3
