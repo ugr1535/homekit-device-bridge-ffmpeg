@@ -26,7 +26,8 @@ jobs:
           sha256sum --strict -c SHA256SUMS
       - name: Publish matching sources and media component
         run: |
-          gh release create camera-ffmpeg-9.0.2-hdb2 --target "$SOURCE_COMMIT" --prerelease \
+          test "$(gh api "repos/$GH_REPO/git/ref/tags/camera-ffmpeg-9.0.2-hdb2" --jq .object.sha)" = "$SOURCE_COMMIT"
+          gh release create camera-ffmpeg-9.0.2-hdb2 --verify-tag --prerelease \
             --title 'Camera FFmpeg 9.0.2-hdb2: sources and ARM64 media component' \
             --notes-file RELEASE-NOTES.md \
             release/camera-ffmpeg-9.0.2-hdb2-corresponding-source.tar.gz \
