@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "target": "aarch64-linux-musl",
+  "sources": {
+    "ffmpeg": {
+      "version": "9.0.2",
+      "file": "ffmpeg-9.0.2.tar.bz2",
+      "url": "https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.bz2",
+      "sha256": "ee80a25a5621df84498cef46917be87eab3b4f01951e85c2c7cbe5c94914ee70"
+    },
+    "x264": {
+      "version": "b35605ace3ddf7c1a5d67a2eb553f034aef41d55",
+      "file": "x264-b35605ace3ddf7c1a5d67a2eb553f034aef41d55.tar.gz",
+      "url": "https://codeload.github.com/mirror/x264/tar.gz/b35605ace3ddf7c1a5d67a2eb553f034aef41d55",
+      "sha256": "cd71a7515b0e9a012e1ac9b1f8415bebcaf6fc97d4db32286642ac4c0fbe24f9"
+    },
+    "openssl": {
+      "version": "3.5.9",
+      "file": "openssl-3.5.9.tar.gz",
+      "url": "https://github.com/openssl/openssl/releases/download/openssl-3.5.9/openssl-3.5.9.tar.gz",
+      "sha256": "603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a"
+    },
+    "zig": {
+      "version": "0.15.2",
+      "file": "zig-0.15.2.tar.xz",
+      "url": "https://ziglang.org/download/0.15.2/zig-0.15.2.tar.xz",
+      "sha256": "d9b30c7aa983fcff5eed2084d54ae83eaafe7ff3a84d8fb754d854165a6e521c"
+    }
+  },
+  "toolchains": {
+    "darwin-arm64": {
+      "file": "zig-aarch64-macos-0.15.2.tar.xz",
+      "url": "https://ziglang.org/download/0.15.2/zig-aarch64-macos-0.15.2.tar.xz",
+      "sha256": "3cc2bab367e185cdfb27501c4b30b1b0653c28d9f73df8dc91488e66ece5fa6b"
+    },
+    "linux-x64": {
+      "file": "zig-x86_64-linux-0.15.2.tar.xz",
+      "url": "https://ziglang.org/download/0.15.2/zig-x86_64-linux-0.15.2.tar.xz",
+      "sha256": "02aa270f183da276e5b5920b1dac44a63f1a49e55050ebde3aecc9eb82f93239"
+    },
+    "linux-arm64": {
+      "file": "zig-aarch64-linux-0.15.2.tar.xz",
+      "url": "https://ziglang.org/download/0.15.2/zig-aarch64-linux-0.15.2.tar.xz",
+      "sha256": "958ed7d1e00d0ea76590d27666efbf7a932281b3d7ba0c6b01b0ff26498f667f"
+    }
+  }
+}

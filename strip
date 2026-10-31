@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+# x264 optionally strips local assembly labels. Keeping them is portable and
+# avoids removing global symbols; FFmpeg is configured without stripping too.
+test "${1:-}" = -x && test "$#" = 2
