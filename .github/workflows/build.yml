@@ -19,6 +19,14 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Restore checksum-verified upstream archives
+        run: |
+          curl --fail --location --retry 2 --max-time 240 --max-filesize 134217728 \
+            --output "$RUNNER_TEMP/source-cache.tar.gz" \
+            https://github.com/ugr1535/homekit-device-bridge-ffmpeg/releases/download/camera-ffmpeg-9.0.2-hdb3/camera-ffmpeg-9.0.2-hdb3-corresponding-source.tar.gz
+          echo "5defba9a97ebf98c3e921b5492a3dd0566d85cea43fd576965595907e5725d63  $RUNNER_TEMP/source-cache.tar.gz" | sha256sum --strict -c -
+          mkdir "$RUNNER_TEMP/archives"
+          tar -xzf "$RUNNER_TEMP/source-cache.tar.gz" -C "$RUNNER_TEMP/archives" --strip-components=2 corresponding-source/archives
       - name: Fetch checksum-pinned sources
         run: node fetch.js "$RUNNER_TEMP/archives"
       - name: Install x64 assembler on the disposable build host

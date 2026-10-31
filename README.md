@@ -63,6 +63,10 @@ Exact binary hashes may differ across host environments; every distributed
 binary must be accompanied by the source/build record for that build.
 Each architecture has separate binary/source archives, SHA-256 digests and a
 native smoke report. CI uses native ARM64 and x64 hosts, not CPU emulation.
+CI restores the original upstream archives from an earlier immutable public
+source release, checking its full SHA-256 before extraction. fetch.js then checks
+each individual source hash and retrieves the host toolchain. This avoids making
+every rebuild depend on the upstream FFmpeg download server being reachable.
 These are Linux executables, not macOS Mach-O applications. A Mac's CPU alone
 does not prove compatibility; verify the Homey app process's platform/architecture
 and LAN reachability in its actual Self-Hosted Server environment.
