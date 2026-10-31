@@ -11,8 +11,8 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ugr1535/homekit-device-bridge-ffmpeg
-      TEST_RUN: '41194981437'
-      SOURCE_COMMIT: 2cb1cf24b9af1b7368bba25ce3290224715b75aa
+      TEST_RUN: '41195168473'
+      SOURCE_COMMIT: 02e403a91c69b67c6823e235d7b44b2e966bf447
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
