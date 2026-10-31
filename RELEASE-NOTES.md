@@ -10,9 +10,11 @@ the actual compiler runtime sources, build scripts and dependency license texts.
 The compiler program itself is not redistributed; the recipe pins its upstream
 download and checksum.
 
-Linux ARM64 tests passed for three H264 profiles, JPEG snapshots, copy-only AAC audio in fragmented MP4,
+Native Linux ARM64 and x64 tests cover three H264 profiles, JPEG snapshots, copy-only AAC audio in fragmented MP4,
 over TCP, SRTP packet output and rejection of an untrusted TLS certificate.
 The tests ran against the exact executable identified in smoke-result.json.
+Each architecture has its own binary and corresponding-source archive. Use its
+matching manifest and checksums; no macOS executable is distributed here.
 
 This prerelease does not certify Homey hardware performance, Apple Home playback,
 codec patent clearance or Athom approval. Perform the physical device and

@@ -19,16 +19,19 @@ Sources can be downloaded without signing in or supplying a key.
 
 ## Build
 
-Prerequisites: Node.js 18+, POSIX shell, make, Perl, tar and pkg-config. On macOS,
+Prerequisites: Node.js 18+, POSIX shell, make, Perl, tar and pkg-config; x64 builds
+also require NASM to retain optimized x86 code. On macOS,
 Apple Command Line Tools provide llvm-nm. Linux build hosts need binutils.
-Supported hosts are macOS ARM64, Linux ARM64 and Linux x64; output is always
-Linux ARM64 static PIE with a musl runtime, stack protection, RELRO and a
+Supported hosts are macOS ARM64, Linux ARM64 and Linux x64; targets are Linux
+ARM64 and Linux x64 static PIE with a musl runtime, stack protection, RELRO and a
 non-executable stack. The prebuilt Zig toolchain is
 checksum-pinned and unpacked locally; nothing is installed globally.
 
 ```sh
 node fetch.js /tmp/camera-archives
 sh build.sh /tmp/camera-build /tmp/camera-archives
+# For Linux x64 output instead:
+CAMERA_ARCH=x64 sh build.sh /tmp/camera-build-x64 /tmp/camera-archives
 ```
 
 Use fresh build/output directories. JOBS is bounded to 1-4 (default 2). To build
@@ -39,7 +42,7 @@ The compiler executable is not redistributed. Fetch its checksum-pinned archive
 before an offline build. The bundle includes Zig's full source archive and the
 actual compiler-supplied runtime sources, including musl and compiler-rt.
 
-On a Linux ARM64 host, run:
+On a Linux host matching the built executable's architecture, run:
 
 ```sh
 node smoke.js /tmp/camera-build/output/ffmpeg /tmp/camera-smoke
@@ -58,6 +61,11 @@ recorded. Cross-platform symbol stripping is disabled; native Linux ARM64 builds
 strip the final executable with the host's binutils after linking.
 Exact binary hashes may differ across host environments; every distributed
 binary must be accompanied by the source/build record for that build.
+Each architecture has separate binary/source archives, SHA-256 digests and a
+native smoke report. CI uses native ARM64 and x64 hosts, not CPU emulation.
+These are Linux executables, not macOS Mach-O applications. A Mac's CPU alone
+does not prove compatibility; verify the Homey app process's platform/architecture
+and LAN reachability in its actual Self-Hosted Server environment.
 
 For modified versions, edit the source/recipe, rebuild in a new directory and
 substitute the executable in a local development copy of the consuming app.
