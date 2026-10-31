@@ -21,6 +21,11 @@ jobs:
           persist-credentials: false
       - name: Fetch checksum-pinned sources
         run: node fetch.js "$RUNNER_TEMP/archives"
+      - name: Install x64 assembler on the disposable build host
+        if: matrix.arch == 'x64'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends nasm
       - name: Build static Linux executable
         env:
           JOBS: '4'
