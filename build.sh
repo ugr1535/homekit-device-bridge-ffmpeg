@@ -59,8 +59,11 @@ test -n "$NM" || NM=nm
     --enable-demuxer=rtsp,rtp,sdp,h264,mov --enable-indev=lavfi \
     --enable-muxer=rtp,h264,mp4,image2,image2pipe,null \
     --enable-decoder=h264,mjpeg,wrapped_avframe --enable-encoder=libx264,mjpeg,wrapped_avframe \
-    --enable-parser=h264 --enable-bsf=h264_mp4toannexb,dump_extra,extract_extradata \
+    --enable-parser=h264 --enable-bsf=h264_mp4toannexb,dump_extradata,extract_extradata \
     --enable-filter=color,scale,pad,setsar,fps,format,null,split
+for feature in H264_MP4TOANNEXB_BSF DUMP_EXTRADATA_BSF WRAPPED_AVFRAME_DECODER TLS_PROTOCOL SRTP_PROTOCOL RTSP_DEMUXER LIBX264_ENCODER MJPEG_ENCODER MP4_MUXER; do
+    grep -q "^#define CONFIG_${feature} 1$" config_components.h || { echo "Missing build feature: $feature" >&2; exit 1; }
+done
 make -j"$JOBS" ffmpeg
 mkdir "$WORK/output"
 cp ffmpeg "$WORK/output/ffmpeg"

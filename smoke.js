@@ -84,6 +84,6 @@ async function smoke(binary, directory) {
 }
 
 if (require.main === module) smoke(path.resolve(process.argv[2]), path.resolve(process.argv[3]))
-    .catch(error => { console.error(error.message); process.exitCode = 1; });
+    .catch(error => { console.error(String(error.stderr || error.message).slice(-2000)); process.exitCode = 1; });
 
 module.exports = { smoke };
