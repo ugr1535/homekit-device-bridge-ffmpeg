@@ -22,7 +22,8 @@ Sources can be downloaded without signing in or supplying a key.
 Prerequisites: Node.js 18+, POSIX shell, make, Perl, tar and pkg-config. On macOS,
 Apple Command Line Tools provide llvm-nm. Linux build hosts need binutils.
 Supported hosts are macOS ARM64, Linux ARM64 and Linux x64; output is always
-Linux ARM64 with a statically linked musl runtime. The prebuilt Zig toolchain is
+Linux ARM64 static PIE with a musl runtime, stack protection, RELRO and a
+non-executable stack. The prebuilt Zig toolchain is
 checksum-pinned and unpacked locally; nothing is installed globally.
 
 ```sh

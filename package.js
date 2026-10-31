@@ -59,13 +59,13 @@ async function packageRelease(build, archives, output) {
     for (const name of ['config.h', 'config_components.h', 'config.mak', 'smoke-result.json']) {
         await fs.copyFile(path.join(build, 'output', name), path.join(sources, name));
     }
-    const archiveName = 'camera-ffmpeg-9.0.2-hdb1-corresponding-source.tar.gz';
+    const archiveName = `${lock.release}-corresponding-source.tar.gz`;
     execFileSync('tar', ['-czf', path.join(output, archiveName), '-C', output, 'corresponding-source'], { timeout: 120000 });
     await fs.rm(sources, { recursive: true });
     await fs.copyFile(binary, path.join(output, 'ffmpeg'));
     await fs.chmod(path.join(output, 'ffmpeg'), 0o755);
     await fs.copyFile(path.join(build, 'output/smoke-result.json'), path.join(output, 'smoke-result.json'));
-    const manifest = { schemaVersion: 1, release: 'camera-ffmpeg-9.0.2-hdb1', version: '9.0.2',
+    const manifest = { schemaVersion: 1, release: lock.release, version: '9.0.2',
         license: 'GPL-3.0-or-later', variant: 'linuxarm64-gpl-minimal-musl', linkage: 'fully-static',
         platform: 'linux', arch: 'arm64', sourceRepository: 'https://github.com/ugr1535/homekit-device-bridge-ffmpeg',
         correspondingSource: { file: archiveName, sha256: await digest(path.join(output, archiveName)) },
@@ -81,7 +81,7 @@ async function packageRelease(build, archives, output) {
     const sums = [];
     for (const name of [...Object.keys(manifest.files), 'build-manifest.json']) sums.push(`${await digest(path.join(output, name))}  ${name}`);
     await fs.writeFile(path.join(output, 'SHA256SUMS'), sums.join('\n') + '\n');
-    const binaryArchive = 'camera-ffmpeg-9.0.2-hdb1-linux-arm64.tar.gz';
+    const binaryArchive = `${lock.release}-linux-arm64.tar.gz`;
     execFileSync('tar', ['-czf', path.join(output, binaryArchive), '-C', output,
         'ffmpeg', 'licenses', 'THIRD_PARTY_NOTICES.md', 'build-manifest.json', 'smoke-result.json', 'SHA256SUMS'], { timeout: 120000 });
     console.log(JSON.stringify({ output, binaryBytes: manifest.files.ffmpeg.bytes, sourceBytes: manifest.files[archiveName].bytes }));

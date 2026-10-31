@@ -75,9 +75,20 @@ async function smoke(binary, directory) {
         error => /certificate verify failed/i.test(String(error.stderr)));
     } finally { await new Promise(resolve => tls.close(resolve)); }
     const data = await fs.readFile(binary);
+    assert.equal(data.readUInt16LE(16), 3, 'Static PIE is required to retain address randomization');
+    const offset = Number(data.readBigUInt64LE(32)), size = data.readUInt16LE(54), count = data.readUInt16LE(56);
+    let nonExecutableStack = false, relro = false;
+    for (let i = 0; i < count; i++) {
+        const at = offset + i * size, type = data.readUInt32LE(at), flags = data.readUInt32LE(at + 4);
+        if (type === 0x6474e551) nonExecutableStack = !(flags & 1);
+        if (type === 0x6474e552) relro = true;
+        assert.notEqual(type, 3, 'No external ELF loader');
+    }
+    assert.ok(nonExecutableStack && relro, 'NX stack and RELRO are required');
     const report = { schemaVersion: 1, platform: process.platform, arch: process.arch,
         binarySha256: createHash('sha256').update(data).digest('hex'), binaryBytes: data.length,
         encodedProfiles, jpeg: true, fragmentedMp4Tcp: true, srtpPackets, tlsRejectsUntrusted: true, status: 'passed',
+        staticPie: true, nonExecutableStack, relro,
         homeyHardwareTested: false, appleHomePlaybackTested: false };
     await fs.writeFile(path.join(path.dirname(binary), 'smoke-result.json'), JSON.stringify(report, null, 2) + '\n');
     console.log(JSON.stringify(report, null, 2));
