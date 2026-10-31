@@ -20,15 +20,24 @@ async function fetchSources(directory) {
     for (const entry of [...Object.values(lock.sources), toolchain]) {
         const file = path.join(directory, entry.file);
         if (fs.existsSync(file) && await digest(file) === entry.sha256) { console.log(`Verified ${entry.file}`); continue; }
-        const response = await fetch(entry.url, { signal: AbortSignal.timeout(240000) });
-        if (!response.ok || new URL(response.url).protocol !== 'https:') throw Error(`Source download failed: ${entry.file}`);
-        let bytes = 0;
         const stage = `${file}.partial`;
         try {
-            await pipeline(Readable.fromWeb(response.body), new Transform({ transform(chunk, encoding, done) {
-                bytes += chunk.length;
-                done(bytes > 128 * 1024 * 1024 ? Error('Source archive too large') : null, chunk);
-            } }), fs.createWriteStream(stage));
+            for (let attempt = 0; attempt < 3; attempt++) {
+                try {
+                    console.log(`Downloading ${entry.file} (attempt ${attempt + 1}/3)`);
+                    const response = await fetch(entry.url, { signal: AbortSignal.timeout(240000) });
+                    if (!response.ok || new URL(response.url).protocol !== 'https:') throw Error('Source response unavailable');
+                    let bytes = 0;
+                    await pipeline(Readable.fromWeb(response.body), new Transform({ transform(chunk, encoding, done) {
+                        bytes += chunk.length;
+                        done(bytes > 128 * 1024 * 1024 ? Error('Source archive too large') : null, chunk);
+                    } }), fs.createWriteStream(stage));
+                    break;
+                } catch (error) {
+                    if (attempt === 2 || error.message === 'Source archive too large') throw Error(`Source download failed: ${entry.file}`);
+                    await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
+                }
+            }
             if (await digest(stage) !== entry.sha256) throw Error(`Source checksum mismatch: ${entry.file}`);
             await fs.promises.rename(stage, file);
             console.log(`Verified ${entry.file}`);
