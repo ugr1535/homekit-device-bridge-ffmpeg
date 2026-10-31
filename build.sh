@@ -18,7 +18,7 @@ export SOURCE_DATE_EPOCH=1790812800
 export LC_ALL=C TZ=UTC
 export CC="$WORK/bin/cc" AR="$WORK/bin/ar" RANLIB="$WORK/bin/ranlib" STRIP="$WORK/bin/strip"
 export CFLAGS="-O2 -fPIC -fstack-protector-strong -ffile-prefix-map=$WORK=/build"
-export LDFLAGS="-static-pie -Wl,-z,relro,-z,now,-z,noexecstack"
+export LDFLAGS="-static -pie -Wl,-z,relro,-z,now,-z,noexecstack"
 export PKG_CONFIG_LIBDIR="$WORK/prefix/lib/pkgconfig"
 unset PKG_CONFIG_PATH CPATH LIBRARY_PATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH SDKROOT
 for tool in cc ar ranlib strip; do cp "$RECIPE/$tool" "$WORK/bin/$tool"; chmod 755 "$WORK/bin/$tool"; done
