@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "release": "camera-ffmpeg-9.0.2-hdb3",
-  "target": "aarch64-linux-musl",
+  "release": "camera-ffmpeg-9.0.2-hdb4",
+  "targets": { "arm64": "aarch64-linux-musl", "x64": "x86_64-linux-musl" },
   "sources": {
     "ffmpeg": {
       "version": "9.0.2",

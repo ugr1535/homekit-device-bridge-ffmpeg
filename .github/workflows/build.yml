@@ -4,8 +4,16 @@ on:
 permissions:
   contents: read
 jobs:
-  arm64:
-    runs-on: ubuntu-24.04-arm
+  media:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+          - arch: x64
+            runner: ubuntu-24.04
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -13,17 +21,18 @@ jobs:
           persist-credentials: false
       - name: Fetch checksum-pinned sources
         run: node fetch.js "$RUNNER_TEMP/archives"
-      - name: Build static Linux ARM64 executable
+      - name: Build static Linux executable
         env:
           JOBS: '4'
+          CAMERA_ARCH: ${{ matrix.arch }}
         run: sh build.sh "$RUNNER_TEMP/build" "$RUNNER_TEMP/archives"
-      - name: Test actual ARM64 executable
+      - name: Test actual native executable
         run: node smoke.js "$RUNNER_TEMP/build/output/ffmpeg" "$RUNNER_TEMP/smoke"
       - name: Package corresponding source and notices
         run: node package.js "$RUNNER_TEMP/build" "$RUNNER_TEMP/archives" "$RUNNER_TEMP/release"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: camera-ffmpeg-arm64
+          name: camera-ffmpeg-${{ matrix.arch }}
           path: ${{ runner.temp }}/release/
           if-no-files-found: error
           retention-days: 30

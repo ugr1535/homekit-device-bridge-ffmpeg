@@ -12,8 +12,8 @@ async function packageRelease(build, archives, output) {
     await verifySources(archives);
     const smoke = JSON.parse(await fs.readFile(path.join(build, 'output/smoke-result.json'), 'utf8'));
     const binary = path.join(build, 'output/ffmpeg');
-    if (smoke.status !== 'passed' || smoke.platform !== 'linux' || smoke.arch !== 'arm64'
-        || smoke.binarySha256 !== await digest(binary)) throw Error('Matching ARM64 smoke report required');
+    if (smoke.status !== 'passed' || smoke.platform !== 'linux' || !Object.hasOwn(lock.targets, smoke.arch)
+        || smoke.arch !== process.arch || smoke.binarySha256 !== await digest(binary)) throw Error('Matching native media smoke report required');
     await fs.mkdir(output, { recursive: false });
     const sources = path.join(output, 'corresponding-source');
     const sourceArchives = path.join(sources, 'archives');
@@ -59,15 +59,15 @@ async function packageRelease(build, archives, output) {
     for (const name of ['config.h', 'config_components.h', 'config.mak', 'smoke-result.json']) {
         await fs.copyFile(path.join(build, 'output', name), path.join(sources, name));
     }
-    const archiveName = `${lock.release}-corresponding-source.tar.gz`;
+    const archiveName = `${lock.release}-corresponding-source-${smoke.arch}.tar.gz`;
     execFileSync('tar', ['-czf', path.join(output, archiveName), '-C', output, 'corresponding-source'], { timeout: 120000 });
     await fs.rm(sources, { recursive: true });
     await fs.copyFile(binary, path.join(output, 'ffmpeg'));
     await fs.chmod(path.join(output, 'ffmpeg'), 0o755);
     await fs.copyFile(path.join(build, 'output/smoke-result.json'), path.join(output, 'smoke-result.json'));
     const manifest = { schemaVersion: 1, release: lock.release, version: '9.0.2',
-        license: 'GPL-3.0-or-later', variant: 'linuxarm64-gpl-minimal-musl', linkage: 'fully-static',
-        platform: 'linux', arch: 'arm64', sourceRepository: 'https://github.com/ugr1535/homekit-device-bridge-ffmpeg',
+        license: 'GPL-3.0-or-later', variant: `linux${smoke.arch}-gpl-minimal-musl`, linkage: 'fully-static',
+        platform: 'linux', arch: smoke.arch, sourceRepository: 'https://github.com/ugr1535/homekit-device-bridge-ffmpeg',
         correspondingSource: { file: archiveName, sha256: await digest(path.join(output, archiveName)) },
         sources: lock.sources, smoke, files: {} };
     for (const name of ['ffmpeg', archiveName, 'smoke-result.json', 'THIRD_PARTY_NOTICES.md']) {
@@ -81,7 +81,7 @@ async function packageRelease(build, archives, output) {
     const sums = [];
     for (const name of [...Object.keys(manifest.files), 'build-manifest.json']) sums.push(`${await digest(path.join(output, name))}  ${name}`);
     await fs.writeFile(path.join(output, 'SHA256SUMS'), sums.join('\n') + '\n');
-    const binaryArchive = `${lock.release}-linux-arm64.tar.gz`;
+    const binaryArchive = `${lock.release}-linux-${smoke.arch}.tar.gz`;
     execFileSync('tar', ['-czf', path.join(output, binaryArchive), '-C', output,
         'ffmpeg', 'licenses', 'THIRD_PARTY_NOTICES.md', 'build-manifest.json', 'smoke-result.json', 'SHA256SUMS'], { timeout: 120000 });
     console.log(JSON.stringify({ output, binaryBytes: manifest.files.ffmpeg.bytes, sourceBytes: manifest.files[archiveName].bytes }));

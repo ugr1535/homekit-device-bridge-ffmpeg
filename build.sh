@@ -5,6 +5,14 @@ set -eu
 RECIPE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 WORK=${1:?Provide a separate empty build directory}
 ARCHIVES=${2:?Provide the checksum-verified archive directory}
+CAMERA_ARCH=${CAMERA_ARCH:-arm64}
+case "$CAMERA_ARCH" in
+    arm64) TARGET_HOST=aarch64-linux; FFMPEG_ARCH=aarch64; OPENSSL_TARGET=linux-aarch64 ;;
+    x64) TARGET_HOST=x86_64-linux; FFMPEG_ARCH=x86_64; OPENSSL_TARGET=linux-x86_64
+        command -v nasm >/dev/null || { echo 'NASM is required for the x64 build' >&2; exit 1; } ;;
+    *) echo 'Only arm64 and x64 targets are supported' >&2; exit 1 ;;
+esac
+export CAMERA_TARGET=$(node -e 'console.log(require(process.argv[1]).targets[process.argv[2]])' "$RECIPE/sources.json" "$CAMERA_ARCH")
 case "$WORK$ARCHIVES$RECIPE" in *' '*|*'\n'*) echo 'Use build paths without spaces' >&2; exit 1;; esac
 node "$RECIPE/fetch.js" --verify "$ARCHIVES"
 test ! -e "$WORK" || { echo 'Build directory already exists; use a new directory' >&2; exit 1; }
@@ -36,11 +44,11 @@ done
 JOBS=${JOBS:-2}
 case "$JOBS" in 1|2|3|4) ;; *) echo 'JOBS must be 1-4' >&2; exit 1;; esac
 cd "$WORK/src/x264"
-./configure --host=aarch64-linux --prefix="$WORK/prefix" --enable-static --disable-cli --disable-opencl --enable-pic --bit-depth=8 --chroma-format=420
+./configure --host="$TARGET_HOST" --prefix="$WORK/prefix" --enable-static --disable-cli --disable-opencl --enable-pic --bit-depth=8 --chroma-format=420
 make -j"$JOBS"
 make install-lib-static install-lib-dev
 cd "$WORK/src/openssl"
-perl Configure linux-aarch64 --prefix="$WORK/prefix" --openssldir=/etc/ssl --libdir=lib \
+perl Configure "$OPENSSL_TARGET" --prefix="$WORK/prefix" --openssldir=/etc/ssl --libdir=lib \
     no-shared no-tests no-apps no-docs no-module no-engine no-legacy no-comp no-dso no-zlib
 make -j"$JOBS" build_libs
 make install_dev
@@ -48,7 +56,7 @@ cd "$WORK/src/ffmpeg"
 NM=$(command -v llvm-nm || true)
 if test -z "$NM" && test "$(uname -s)" = Darwin; then NM=$(xcrun --find llvm-nm); fi
 test -n "$NM" || NM=nm
-./configure --prefix="$WORK/prefix" --enable-cross-compile --target-os=linux --arch=aarch64 --cpu=generic \
+./configure --prefix="$WORK/prefix" --enable-cross-compile --target-os=linux --arch="$FFMPEG_ARCH" --cpu=generic \
     --cc="$CC" --ar="$AR" --ranlib="$RANLIB" --strip="$STRIP" --nm="$NM" \
     --pkg-config=pkg-config --pkg-config-flags=--static \
     --extra-cflags="$CFLAGS -I$WORK/prefix/include" --extra-ldflags="$LDFLAGS -L$WORK/prefix/lib" \
@@ -68,7 +76,7 @@ done
 make -j"$JOBS" ffmpeg
 mkdir "$WORK/output"
 cp ffmpeg "$WORK/output/ffmpeg"
-if test "$HOST" = linux-arm64; then strip --strip-all "$WORK/output/ffmpeg"; fi
+if test "$HOST" = "linux-$CAMERA_ARCH"; then strip --strip-all "$WORK/output/ffmpeg"; fi
 chmod 755 "$WORK/output/ffmpeg"
 cp config.h config_components.h ffbuild/config.mak "$WORK/output/"
 printf '%s\n' "Built $WORK/output/ffmpeg; target-device validation is still required."

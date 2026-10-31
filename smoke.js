@@ -13,7 +13,7 @@ const execute = promisify(execFile);
 
 async function smoke(binary, directory) {
     assert.equal(process.platform, 'linux');
-    assert.equal(process.arch, 'arm64');
+    assert.ok(['arm64', 'x64'].includes(process.arch));
     await fs.mkdir(directory, { recursive: true });
     const run = async args => (await execute(binary, ['-hide_banner', '-nostdin', ...args],
         { timeout: 20000, maxBuffer: 16 * 1024 * 1024, encoding: 'buffer' })).stdout;
@@ -94,6 +94,7 @@ async function smoke(binary, directory) {
         error => /certificate verify failed/i.test(String(error.stderr)));
     } finally { await new Promise(resolve => tls.close(resolve)); }
     const data = await fs.readFile(binary);
+    assert.equal(data.readUInt16LE(18), process.arch === 'arm64' ? 183 : 62, 'Executable must match the native test host');
     assert.equal(data.readUInt16LE(16), 3, 'Static PIE is required to retain address randomization');
     const offset = Number(data.readBigUInt64LE(32)), size = data.readUInt16LE(54), count = data.readUInt16LE(56);
     let nonExecutableStack = false, relro = false;
