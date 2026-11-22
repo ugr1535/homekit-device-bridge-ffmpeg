@@ -1,6 +1,6 @@
 Camera media component only; this is not the Homey application package.
 
-FFmpeg 9.0.2, x264, OpenSSL and the musl/compiler runtime sources are pinned by
+FFmpeg 9.0.2, Opus 1.5.2, x264, OpenSSL and the musl/compiler runtime sources are pinned by
 the included source inventory. The executable is GPL-3.0-or-later. Build recipe
 licensing does not replace the executable's license.
 
@@ -10,7 +10,7 @@ the actual compiler runtime sources, build scripts and dependency license texts.
 The compiler program itself is not redistributed; the recipe pins its upstream
 download and checksum.
 
-Native Linux ARM64 and x64 tests cover three H264 profiles, JPEG snapshots, copy-only AAC audio in fragmented MP4,
+Native Linux ARM64 and x64 tests cover three H264 profiles, JPEG snapshots, mono AAC-to-Opus encoding at 24 kHz, copy-only AAC audio in fragmented MP4,
 over TCP, SRTP packet output and rejection of an untrusted TLS certificate.
 The tests ran against the exact executable identified in smoke-result.json.
 Each architecture has its own binary and corresponding-source archive. Use its

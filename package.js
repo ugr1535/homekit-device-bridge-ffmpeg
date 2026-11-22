@@ -35,6 +35,7 @@ async function packageRelease(build, archives, output) {
         'COPYING.GPLv2': 'src/ffmpeg/COPYING.GPLv2',
         'COPYING.LGPLv2.1': 'src/ffmpeg/COPYING.LGPLv2.1',
         'COPYING.LGPLv3': 'src/ffmpeg/COPYING.LGPLv3',
+        'opus-COPYING': 'src/opus/COPYING',
         'x264-COPYING': 'src/x264/COPYING', 'x264-AUTHORS': 'src/x264/AUTHORS',
         'OpenSSL-LICENSE.txt': 'src/openssl/LICENSE.txt',
         'musl-COPYRIGHT': 'toolchain/lib/libc/musl/COPYRIGHT',
@@ -45,7 +46,7 @@ async function packageRelease(build, archives, output) {
     };
     for (const [name, file] of Object.entries(noticeFiles)) await fs.copyFile(path.join(build, file), path.join(licenses, name));
     const notices = `# Camera FFmpeg Third-Party Notices\n\nFFmpeg ${lock.sources.ffmpeg.version} with libx264 is distributed under GPL-3.0-or-later.\n` +
-        `libx264 ${lock.sources.x264.version} is GPL-2.0-or-later. OpenSSL ${lock.sources.openssl.version} is Apache-2.0.\n` +
+        `libx264 ${lock.sources.x264.version} is GPL-2.0-or-later. Opus ${lock.sources.opus.version} is BSD-3-Clause. OpenSSL ${lock.sources.openssl.version} is Apache-2.0.\n` +
         'The musl, Zig and compiler runtime components retain their upstream licenses; see licenses/ and the corresponding-source archive.\n\n' +
         'This software is based in part on the work of the Independent JPEG Group.\n' +
         'The original IJG-derived FFmpeg source files are included with their notices. No upstream source files were modified for this build.\n\n' +

@@ -81,6 +81,21 @@ async function smoke(binary, directory) {
             '-srtp_out_params', randomBytes(30).toString('base64'), `srtp://127.0.0.1:${port}?rtcpport=${port}&pkt_size=1316`]);
         assert.ok(srtpPackets > 0);
     } finally { socket.close(); }
+    const audioSocket = createSocket('udp4');
+    let opusPackets = 0;
+    audioSocket.on('message', packet => {
+        if (packet.length > 12 && (packet[0] >> 6) === 2 && (packet[1] & 127) === 110
+            && packet.readUInt32BE(8) === 12346) opusPackets++;
+    });
+    await new Promise(resolve => audioSocket.bind(0, '127.0.0.1', resolve));
+    try {
+        const port = audioSocket.address().port;
+        await run(['-loglevel', 'error', '-i', aac, '-map', '0:a:0', '-ac', '1', '-ar', '24000',
+            '-c:a', 'libopus', '-application', 'lowdelay', '-frame_duration', '20', '-b:a', '24k',
+            '-frames:a', '8', '-payload_type', '110', '-ssrc', '12346', '-f', 'rtp',
+            `rtp://127.0.0.1:${port}?rtcpport=${port}&pkt_size=1200`]);
+        assert.ok(opusPackets > 0, 'Opus live RTP output is required');
+    } finally { audioSocket.close(); }
     const key = path.join(directory, 'tls-key.pem');
     const cert = path.join(directory, 'tls-cert.pem');
     await execute('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', key, '-out', cert,
@@ -108,7 +123,7 @@ async function smoke(binary, directory) {
     const report = { schemaVersion: 1, platform: process.platform, arch: process.arch,
         binarySha256: createHash('sha256').update(data).digest('hex'), binaryBytes: data.length,
         encodedProfiles, jpeg: true, fragmentedMp4Tcp: true, srtpPackets, tlsRejectsUntrusted: true, status: 'passed',
-        staticPie: true, nonExecutableStack, relro, aacCopy: true,
+        staticPie: true, nonExecutableStack, relro, aacCopy: true, liveOpus: true, opusPackets,
         homeyHardwareTested: false, appleHomePlaybackTested: false };
     await fs.writeFile(path.join(path.dirname(binary), 'smoke-result.json'), JSON.stringify(report, null, 2) + '\n');
     console.log(JSON.stringify(report, null, 2));

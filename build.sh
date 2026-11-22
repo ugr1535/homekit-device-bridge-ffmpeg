@@ -33,7 +33,7 @@ for tool in cc ar ranlib strip; do cp "$RECIPE/$tool" "$WORK/bin/$tool"; chmod 7
 HOST=$(node -p 'process.platform+"-"+process.arch')
 TOOLCHAIN=$(node -e 'console.log(require(process.argv[1]).toolchains[process.argv[2]].file)' "$RECIPE/sources.json" "$HOST")
 tar -xf "$ARCHIVES/$TOOLCHAIN" -C "$WORK/toolchain" --strip-components=1
-for component in ffmpeg x264 openssl; do
+for component in ffmpeg x264 openssl opus; do
     archive=$(node -e 'console.log(require(process.argv[1]).sources[process.argv[2]].file)' "$RECIPE/sources.json" "$component")
     expected=$(node -e 'console.log(require(process.argv[1]).sources[process.argv[2]].sha256)' "$RECIPE/sources.json" "$component")
     actual=$(node -e 'require(process.argv[1]).digest(process.argv[2]).then(console.log)' "$RECIPE/fetch.js" "$ARCHIVES/$archive")
@@ -43,6 +43,10 @@ for component in ffmpeg x264 openssl; do
 done
 JOBS=${JOBS:-2}
 case "$JOBS" in 1|2|3|4) ;; *) echo 'JOBS must be 1-4' >&2; exit 1;; esac
+cd "$WORK/src/opus"
+./configure --host="$TARGET_HOST" --prefix="$WORK/prefix" --enable-static --disable-shared --disable-doc --disable-extra-programs --disable-asm --disable-intrinsics
+make -j"$JOBS"
+make install
 cd "$WORK/src/x264"
 ./configure --host="$TARGET_HOST" --prefix="$WORK/prefix" --enable-static --disable-cli --disable-opencl --enable-pic --bit-depth=8 --chroma-format=420
 make -j"$JOBS"
@@ -61,16 +65,16 @@ test -n "$NM" || NM=nm
     --pkg-config=pkg-config --pkg-config-flags=--static \
     --extra-cflags="$CFLAGS -I$WORK/prefix/include" --extra-ldflags="$LDFLAGS -L$WORK/prefix/lib" \
     --disable-autodetect --disable-debug --disable-doc --disable-shared --disable-stripping --enable-static --enable-pic \
-    --disable-everything --disable-ffplay --disable-ffprobe --disable-swresample \
-    --enable-ffmpeg --enable-network --enable-pthreads --enable-gpl --enable-version3 --enable-libx264 --enable-openssl \
+    --disable-everything --disable-ffplay --disable-ffprobe --enable-swresample \
+    --enable-ffmpeg --enable-network --enable-pthreads --enable-gpl --enable-version3 --enable-libx264 --enable-libopus --enable-openssl \
     --enable-protocol=file,pipe,tcp,udp,rtp,srtp,crypto,tls \
-    --enable-demuxer=rtsp,rtp,sdp,h264,mov --enable-indev=lavfi \
-    --enable-muxer=rtp,h264,mp4,image2,image2pipe,null \
-    --enable-decoder=h264,mjpeg,wrapped_avframe,aac --enable-encoder=libx264,mjpeg,wrapped_avframe \
-    --enable-parser=h264,aac --enable-bsf=h264_mp4toannexb,dump_extradata,extract_extradata,aac_adtstoasc \
+    --enable-demuxer=rtsp,rtp,sdp,h264,hevc,mov --enable-indev=lavfi \
+    --enable-muxer=rtp,h264,hevc,mp4,image2,image2pipe,null \
+    --enable-decoder=h264,mjpeg,wrapped_avframe,aac --enable-encoder=libopus,libx264,mjpeg,wrapped_avframe \
+    --enable-parser=h264,hevc,aac --enable-bsf=h264_mp4toannexb,hevc_mp4toannexb,dump_extradata,extract_extradata,aac_adtstoasc \
     --enable-demuxer=aac \
-    --enable-filter=color,scale,pad,setsar,fps,format,null,split
-for feature in H264_MP4TOANNEXB_BSF DUMP_EXTRADATA_BSF AAC_ADTSTOASC_BSF AAC_PARSER AAC_DEMUXER AAC_DECODER WRAPPED_AVFRAME_DECODER TLS_PROTOCOL SRTP_PROTOCOL RTSP_DEMUXER LIBX264_ENCODER MJPEG_ENCODER MP4_MUXER; do
+    --enable-filter=aresample,aformat,anull,color,scale,pad,setsar,fps,format,null,split
+for feature in LIBOPUS_ENCODER ARESAMPLE_FILTER H264_MP4TOANNEXB_BSF HEVC_MP4TOANNEXB_BSF HEVC_PARSER HEVC_DEMUXER HEVC_MUXER DUMP_EXTRADATA_BSF AAC_ADTSTOASC_BSF AAC_PARSER AAC_DEMUXER AAC_DECODER WRAPPED_AVFRAME_DECODER TLS_PROTOCOL SRTP_PROTOCOL RTSP_DEMUXER LIBX264_ENCODER MJPEG_ENCODER MP4_MUXER; do
     grep -q "^#define CONFIG_${feature} 1$" config_components.h || { echo "Missing build feature: $feature" >&2; exit 1; }
 done
 make -j"$JOBS" ffmpeg

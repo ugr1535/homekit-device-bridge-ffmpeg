@@ -53,8 +53,15 @@ The automated tests check three actual H264 profiles, JPEG output, fragmented MP
 over loopback TCP and SRTP packet output. They do not certify Apple Home playback,
 Homey hardware resource use, codec patent clearance or App Store acceptance.
 
-Features are intentionally limited to H264 video, JPEG snapshots, MP4 recording,
-RTSP input, SRTP output, copy-only AAC-LC audio and TLS. Audio encoders, ffprobe, ffplay, FDK-AAC, OpenCL and unrelated
+After importing the matching native releases for both architectures, run
+`homey app build` and `npm run verify:release-media` from the Homey app directory.
+This checks the packaged media binaries, including their native Opus RTP smoke
+reports. Run it before submitting an app release that advertises live audio.
+
+Features are intentionally limited to H264 video, HEVC packet copying, JPEG snapshots,
+MP4 recording, RTSP input, SRTP output, AAC-LC recording passthrough, mono Opus live audio and TLS. The HEVC
+additions apply to new builds only, add no HEVC encoder, and do not enable a 4K
+HomeKit transport by themselves. ffprobe, ffplay, FDK-AAC, OpenCL and unrelated
 external codec libraries are not enabled. libx264 remains included: this is not
 an LGPL-only build. Inputs are not patched; source hashes and build options are
 recorded. Cross-platform symbol stripping is disabled; native Linux ARM64 builds

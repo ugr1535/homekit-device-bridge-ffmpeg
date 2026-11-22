@@ -1,6 +1,11 @@
 name: Publish Tested Camera Media Sources
 on:
   workflow_dispatch:
+    inputs:
+      build_run:
+        description: Successful native camera build run ID for this commit
+        required: true
+        type: string
 permissions:
   contents: write
   actions: read
@@ -11,14 +16,16 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ugr1535/homekit-device-bridge-ffmpeg
-      TEST_RUN: '41195168473'
-      SOURCE_COMMIT: 02e403a91c69b67c6823e235d7b44b2e966bf447
+      TEST_RUN: ${{ inputs.build_run }}
+      SOURCE_COMMIT: ${{ github.sha }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
       - name: Verify successful source build
         run: |
+          [[ "$TEST_RUN" =~ ^[0-9]+$ ]]
+          test "$(gh run view "$TEST_RUN" --json workflowName --jq .workflowName)" = 'Build and Test Camera FFmpeg'
           test "$(gh run view "$TEST_RUN" --json conclusion --jq .conclusion)" = success
           test "$(gh run view "$TEST_RUN" --json headSha --jq .headSha)" = "$SOURCE_COMMIT"
           for arch in arm64 x64; do
@@ -30,9 +37,9 @@ jobs:
           done
       - name: Publish matching sources and media component
         run: |
-          test "$(gh api "repos/$GH_REPO/git/ref/tags/camera-ffmpeg-9.0.2-hdb4" --jq .object.sha)" = "$SOURCE_COMMIT"
-          gh release create camera-ffmpeg-9.0.2-hdb4 --verify-tag --prerelease \
-            --title 'Camera FFmpeg 9.0.2-hdb4: native ARM64 and x64 with matching sources' \
+          test "$(gh api "repos/$GH_REPO/git/ref/tags/camera-ffmpeg-9.0.2-hdb5" --jq .object.sha)" = "$SOURCE_COMMIT"
+          gh release create camera-ffmpeg-9.0.2-hdb5 --verify-tag --prerelease \
+            --title 'Camera FFmpeg 9.0.2-hdb5: native ARM64 and x64 with matching sources' \
             --notes-file RELEASE-NOTES.md \
             release/*/*-corresponding-source-*.tar.gz release/*/*-linux-*.tar.gz \
             release/build-manifest-*.json release/smoke-result-*.json release/SHA256SUMS-*.txt \
